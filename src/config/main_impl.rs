@@ -1,4 +1,7 @@
-use crate::{class::builtin::{read_rotation_from_entity, read_translation_from_entity}, util::AssetServerExistsExt};
+use crate::{
+	class::builtin::{read_rotation_from_entity, read_translation_from_entity},
+	util::AssetServerExistsExt,
+};
 
 use super::*;
 
@@ -54,7 +57,7 @@ impl TrenchBroomConfig {
 				scale: Vec3::ONE,
 			});
 		}
-		
+
 		// For things like doors where the `angles` property means open direction.
 		if let Some(mut transform) = view.entity.get_mut::<Transform>() {
 			if view.class_map.get(classname.as_str()).map(|class| class.info.ty.is_solid()) == Some(true) {
@@ -143,37 +146,42 @@ impl TrenchBroomConfig {
 
 			// Search for material files
 			for ext in &view.tb_config.generic_material_extensions {
-				let path = view
-					.tb_config
-					.material_root
-					.join(format!("{}.{}", view.name, ext));
+				let path = view.tb_config.material_root.join(format!("{}.{}", view.name, ext));
 
 				if view.asset_server.exists(&source, &path).await {
 					// We found one, let's load it!
-					return view.load_context
+					return view
+						.load_context
 						.loader()
-						.with_settings(move |s: &mut ImageLoaderSettings| s.sampler = texture_sampler.clone())
+						.with_settings(move |s: &mut ImageLoaderSettings| {
+							s.sampler = texture_sampler.clone();
+							s.is_srgb = false;
+						})
 						.load(AssetPath::from_path(&path).with_source(source));
 				}
 			}
-			
+
 			// None found, look for image files
 
 			for ext in &view.tb_config.texture_extensions {
-				let path = view
-					.tb_config
-					.material_root
-					.join(format!("{}.{}", view.name, ext));
+				let path = view.tb_config.material_root.join(format!("{}.{}", view.name, ext));
 
 				if view.asset_server.exists(&source, &path).await {
-					return view.load_context
+					return view
+						.load_context
 						.loader()
-						.with_settings(move |s: &mut ImageLoaderSettings| s.sampler = texture_sampler.clone())
+						.with_settings(move |s: &mut ImageLoaderSettings| {
+							s.sampler = texture_sampler.clone();
+							s.is_srgb = false;
+						})
 						.load(AssetPath::from_path(&path).with_source(source));
 				}
 			}
 
-			error!("Failed to find a texture \"{}\" with the GenericMaterial extension(s) {:?} or the image extension(s) {:?}", view.name, view.tb_config.generic_material_extensions, view.tb_config.texture_extensions);
+			error!(
+				"Failed to find a texture \"{}\" with the GenericMaterial extension(s) {:?} or the image extension(s) {:?}",
+				view.name, view.tb_config.generic_material_extensions, view.tb_config.texture_extensions
+			);
 			Handle::default()
 		})
 	}
